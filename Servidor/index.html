@@ -4,61 +4,182 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proyecto - IW</title>
+    <style>
+        body{
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .container-principal{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        .container-canva{
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .container-ip{
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .container-ip button{
+            background-color: rgb(96, 117, 220);
+            border: none;
+            color: rgb(20, 62, 98);
+            padding: 8px;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+        .container-ip button:hover{
+            background-color: rgb(133, 150, 246);
+            color: white;
+            cursor: pointer;
+            transition: ease-in-out 0.2s;
+        }
+        button:active{
+            transform: scale(1.1);
+        }
+        .input-ip input{
+            padding: 6.5px;
+            border-radius: 5px;
+        }
+        span{
+            color: rgb(75, 213, 75);
+            font-weight: bold;
+        }
+        #ipConectada{
+            color: rgb(34, 34, 34);
+        }
+        .container-switch{
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .boton {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            background-color: white;
+            color: black;
+            border: 1px solid black;
+        }
+
+        .activo {
+            background-color: gray;
+            color: white;
+        }
+    </style>
     <script src="js/jQuery v3.7.1.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/@jaames/iro/dist/iro.min.js'></script>
     <script>
-        const socket = new WebSocket('ws://192.168.137.196:8080');
-
-        socket.onopen = function(){
-            console.log("Conectado al ESP32");
-        }
-
-        socket.onerror = function(){
-            console.log("Error no se pudo conectar al ESP32");
-        }
-
         $(function(){
-            var colorPicker = new iro.ColorPicker(".colorPicker", {
-                width: 280,
-                color: "rgb(255, 0, 0)",
-                borderWidth: 1,
-                borderColor: "#fff",
-            });
-
-            colorPicker.on(["color:change"], function (color) {
-                socket.send(hexToRgb(color.hexString));
-            });
-
-            $("#apagado").change(function(){
-                if($(this).is(":checked")){
-                    socket.send(hexToRgb("#ffffff"));
-                    $("#mensaje").text("Encendido");
-                }else{
-                    socket.send(hexToRgb("#000000"));
-                    $("#mensaje").text("Apagado");
+            $("#btnGuardarIP").click(function(){        
+                var ip = $("#ip").val();
+                let socket = new WebSocket('ws://'+ip+':8080');
+                $(".input-ip").hide();
+                $(".container-canva").show();
+                $("#ipConectada").text(ip);
+                socket.onopen = function(){
+                    console.log("Conectado al ESP32");
                 }
+
+                socket.onerror = function(){
+                    console.log("Error no se pudo conectar al ESP32");
+                    $(".container-ip").append("<span style='text-align:center; color: red;'>No se encontro la IP </span>");
+
+                }
+
+                $(function(){
+                    var colorPicker = new iro.ColorPicker(".colorPicker", {
+                        width: 280,
+                        color: "rgb(255, 0, 0)",
+                        borderWidth: 1,
+                        borderColor: "#fff",
+                    });
+
+                    colorPicker.on(["color:change"], function (color) {
+                        socket.send(hexToRgb(color.hexString));
+                    });
+
+       
+
+                    $("#encendido").click(function(){
+                        cambiarEstado($(this), $("#apagado"));                        
+                        socket.send(hexToRgb("#ffffff"));          
+                    })
+                    $("#apagado").click(function(){
+                        cambiarEstado($(this), $("#encendido"));
+                        socket.send(hexToRgb("#000000"));                       
+                    })
+
+                    function hexToRgb(hex) {
+                        // Eliminar el '#' si está presente
+                        hex = hex.replace(/^#/, '');
+
+                        // Convertir los valores hexadecimales a decimales
+                        var r = parseInt(hex.substring(0, 2), 16);
+                        var g = parseInt(hex.substring(2, 4), 16);
+                        var b = parseInt(hex.substring(4, 6), 16);
+
+                        return JSON.stringify({
+                            red: r,
+                            green: g,
+                            blue: b,
+                        });
+                    }
+
+
+
+                })
+
+
+                function cambiarEstado(seleccionado, noSeleccionado) {
+                    seleccionado.addClass("activo"); // Agregar clase activo
+                    noSeleccionado.removeClass("activo"); // Remover clase activo
+                }
+    
             })
 
-            function hexToRgb(hex) {
-                // Eliminar el '#' si está presente
-                hex = hex.replace(/^#/, '');
 
-                // Convertir los valores hexadecimales a decimales
-                var r = parseInt(hex.substring(0, 2), 16);
-                var g = parseInt(hex.substring(2, 4), 16);
-                var b = parseInt(hex.substring(4, 6), 16);
 
-                return JSON.stringify({
-                    red: r,
-                    green: g,
-                    blue: b,
-                });
-            }
+    
         })
+
+
     </script>
 </head>
 <body>
-    <div class="colorPicker"></div>
-    <input type="checkbox" name="apagado" id="apagado"><label for="apagado" id="mensaje">Apagado</label>
+    <div class="container-principal">
+        <div class="container-ip">
+            <h1>LED MULTICOLOR ESP32 G4</h1>
+            <div class="input-ip">
+                <label for="ip">IP del ESP32:</label>
+               <input type="text" name="ip" id="ip" value="">
+                <button id="btnGuardarIP" style="margin-left: 8px;">Conectar </button>
+            </div>
+
+        </div>
+        <br>
+        <div style="display: none;" class="container-canva">
+            <span>CONECTADO A LA IP: <span id="ipConectada"></span></span>
+            <br>
+            <div class="colorPicker"></div>
+            <div class="container-switch">
+                <button id="encendido" class="boton">Encendido</button>
+                <button id="apagado" class="boton">Apagado</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
