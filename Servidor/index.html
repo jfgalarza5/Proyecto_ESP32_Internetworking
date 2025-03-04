@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto - IW</title>
+    <script src="js/jQuery v3.7.1.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/@jaames/iro/dist/iro.min.js'></script>
+    <script>
+        const socket = new WebSocket('ws://192.168.137.196:8080');
+
+        socket.onopen = function(){
+            console.log("Conectado al ESP32");
+        }
+
+        socket.onerror = function(){
+            console.log("Error no se pudo conectar al ESP32");
+        }
+
+        $(function(){
+            var colorPicker = new iro.ColorPicker(".colorPicker", {
+                width: 280,
+                color: "rgb(255, 0, 0)",
+                borderWidth: 1,
+                borderColor: "#fff",
+            });
+
+            colorPicker.on(["color:change"], function (color) {
+                socket.send(hexToRgb(color.hexString));
+            });
+
+            $("#apagado").change(function(){
+                if($(this).is(":checked")){
+                    socket.send(hexToRgb("#ffffff"));
+                    $("#mensaje").text("Encendido");
+                }else{
+                    socket.send(hexToRgb("#000000"));
+                    $("#mensaje").text("Apagado");
+                }
+            })
+
+            function hexToRgb(hex) {
+                // Eliminar el '#' si está presente
+                hex = hex.replace(/^#/, '');
+
+                // Convertir los valores hexadecimales a decimales
+                var r = parseInt(hex.substring(0, 2), 16);
+                var g = parseInt(hex.substring(2, 4), 16);
+                var b = parseInt(hex.substring(4, 6), 16);
+
+                return JSON.stringify({
+                    red: r,
+                    green: g,
+                    blue: b,
+                });
+            }
+        })
+    </script>
+</head>
+<body>
+    <div class="colorPicker"></div>
+    <input type="checkbox" name="apagado" id="apagado"><label for="apagado" id="mensaje">Apagado</label>
+</body>
+</html>
