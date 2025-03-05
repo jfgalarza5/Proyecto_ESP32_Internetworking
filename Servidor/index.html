@@ -84,14 +84,17 @@
     <script src='https://cdn.jsdelivr.net/npm/@jaames/iro/dist/iro.min.js'></script>
     <script>
         $(function(){
+            var socket;
+
             $("#btnGuardarIP").click(function(){        
                 var ip = $("#ip").val();
-                let socket = new WebSocket('ws://'+ip+':8080');
-                $(".input-ip").hide();
-                $(".container-canva").show();
-                $("#ipConectada").text(ip);
+                socket = new WebSocket('ws://'+ip+':8080');
+                $(".container-ip span").remove();
                 socket.onopen = function(){
                     console.log("Conectado al ESP32");
+                    $(".input-ip").hide();
+                    $(".container-canva").show();
+                    $("#ipConectada").text(ip);
                 }
 
                 socket.onerror = function(){
@@ -99,64 +102,50 @@
                     $(".container-ip").append("<span style='text-align:center; color: red;'>No se encontro la IP </span>");
 
                 }
+            });
 
-                $(function(){
-                    var colorPicker = new iro.ColorPicker(".colorPicker", {
-                        width: 280,
-                        color: "rgb(255, 0, 0)",
-                        borderWidth: 1,
-                        borderColor: "#fff",
-                    });
+            var colorPicker = new iro.ColorPicker(".colorPicker", {
+                width: 280,
+                color: "rgb(255, 0, 0)",
+                borderWidth: 1,
+                borderColor: "#fff",
+            });
 
-                    colorPicker.on(["color:change"], function (color) {
-                        socket.send(hexToRgb(color.hexString));
-                    });
+            colorPicker.on(["color:change"], function (color) {
+                socket.send(hexToRgb(color.hexString));
+            });
 
-       
+            $("#encendido").click(function(){
+                cambiarEstado($(this), $("#apagado"));                        
+                socket.send(hexToRgb("#ffffff"));          
+            });
 
-                    $("#encendido").click(function(){
-                        cambiarEstado($(this), $("#apagado"));                        
-                        socket.send(hexToRgb("#ffffff"));          
-                    })
-                    $("#apagado").click(function(){
-                        cambiarEstado($(this), $("#encendido"));
-                        socket.send(hexToRgb("#000000"));                       
-                    })
+            $("#apagado").click(function(){
+                cambiarEstado($(this), $("#encendido"));
+                socket.send(hexToRgb("#000000"));                       
+            });
 
-                    function hexToRgb(hex) {
-                        // Eliminar el '#' si está presente
-                        hex = hex.replace(/^#/, '');
+            function hexToRgb(hex) {
+                // Eliminar el '#' si está presente
+                hex = hex.replace(/^#/, '');
 
-                        // Convertir los valores hexadecimales a decimales
-                        var r = parseInt(hex.substring(0, 2), 16);
-                        var g = parseInt(hex.substring(2, 4), 16);
-                        var b = parseInt(hex.substring(4, 6), 16);
+                // Convertir los valores hexadecimales a decimales
+                var r = parseInt(hex.substring(0, 2), 16);
+                var g = parseInt(hex.substring(2, 4), 16);
+                var b = parseInt(hex.substring(4, 6), 16);
 
-                        return JSON.stringify({
-                            red: r,
-                            green: g,
-                            blue: b,
-                        });
-                    }
+                return JSON.stringify({
+                    red: r,
+                    green: g,
+                    blue: b,
+                });
+            }
 
-
-
-                })
-
-
-                function cambiarEstado(seleccionado, noSeleccionado) {
-                    seleccionado.addClass("activo"); // Agregar clase activo
-                    noSeleccionado.removeClass("activo"); // Remover clase activo
-                }
-    
-            })
-
-
-
-    
-        })
-
-
+            function cambiarEstado(seleccionado, noSeleccionado) {
+                seleccionado.addClass("activo"); // Agregar clase activo
+                noSeleccionado.removeClass("activo"); // Remover clase activo
+            }
+        });
     </script>
 </head>
 <body>
@@ -165,10 +154,9 @@
             <h1>LED MULTICOLOR ESP32 G4</h1>
             <div class="input-ip">
                 <label for="ip">IP del ESP32:</label>
-               <input type="text" name="ip" id="ip" value="">
+                <input type="text" name="ip" id="ip" value="">
                 <button id="btnGuardarIP" style="margin-left: 8px;">Conectar </button>
             </div>
-
         </div>
         <br>
         <div style="display: none;" class="container-canva">
